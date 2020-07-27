@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta name="viewport" content="width=device-width" />
+
+    <style>
+        body {
+            font-family: Tahoma, Geneva, sans-serif;
+        }
+    </style>
+
+    <!-- colyseus.js client -->
+    <script type="text/javascript" src="https://raw.githack.com/colyseus/colyseus.js/dev/dist/colyseus.js"></script>
+    <script type="text/javascript" src="https://ecsy.io/build/ecsy.js"></script>
+</head>
+
+<body>
+    <h1>
+        <a href="https://github.com/colyseus/colyseus-examples"><img
+                src="https://cdn.jsdelivr.net/gh/colyseus/colyseus@master/media/header.png" height="100"
+                alt="colyseus" /></a>
+    </h1>
+
+    <p>This example shows how to use a custom Room with <code>@colyseus/ecs</code>:</p>
+
+    <p>Open Developer Tools for log messages.</p>
+
+    <p><strong>Commands</strong></p>
+
+    <button onclick="join()">join ecs-demo-room</button>
+    <button onclick="leave()">leave ecs-demo-room</button>
+
+    <h2>Room:</h2>
+    <canvas style='border:1px solid red'>
+    </canvas>
+
+    <script>
+        // The same components than the backend + some frontent specific
+        const {
+            Component,
+            Types,
+            System,
+            TagComponent,
+            World
+        } = ECSY;
+        // Initialize canvas
+        let canvas = {
+            width: 800,
+            height: 600
+        };
+
+        class PlayerInfo extends Component {}
+        PlayerInfo.schema = {
+            sessionId: {
+                type: Types.String
+            }
+        };
+
+        // Initialize canvas
+        let canvasSelector = document.querySelector("canvas");
+        canvasSelector.width = canvas.width;
+        canvasSelector.height = canvas.height;
+        let canvasWidth = canvasSelector.width;
+        let canvasHeight = canvasSelector.height;
+        let ctx = canvasSelector.getContext("2d");
+
+        //----------------------
+        // Components
+        //----------------------
+
+        // Velocity component
+        class Velocity extends Component {}
+
+        Velocity.schema = {
+            x: {
+                type: Types.Number
+            },
+            y: {
+                type: Types.Number
+            }
+        };
+
+        // Position component
+        class Position extends Component {}
+
+        Position.schema = {
+            x: {
+                type: Types.Number
+            },
+            y: {
+                type: Types.Number
+            }
+        };
+
+        // Shape component
+        class Shape extends Component {}
+
+        Shape.schema = {
+            primitive: {
+                type: Types.String,
+                default: 'box'
+            }
+        };
+
+        // Shape component
+        class Size extends Component {}
+
+        Shape.schema = {
+            primitive: {
+                type: Types.Number,
+                default: 30,
+            }
+        };
+
+        // Renderable component
+        class Renderable extends TagComponent {}
+
+        //----------------------
+        // Systems
+        //----------------------
+
+        // MovableSystem
+        class MovableSystem extends System {
+            // This method will get called on every frame by default
+            execute(delta, time) {
+                // Iterate through all the entities on the query
+                this.queries.moving.results.forEach(entity => {
+                    const velocity = entity.getComponent(Velocity);
+                    const position = entity.getMutableComponent(Position);
+                    position.x += velocity.x * delta;
+                    position.y += velocity.y * delta;
+
+                    if (position.x > canvasWidth + SHAPE_HALF_SIZE) position.x = -SHAPE_HALF_SIZE;
+                    if (position.x < -SHAPE_HALF_SIZE) position.x = canvasWidth + SHAPE_HALF_SIZE;
+                    if (position.y > canvasHeight + SHAPE_HALF_SIZE) position.y = -SHAPE_HALF_SIZE;
+                    if (position.y < -SHAPE_HALF_SIZE) position.y = canvasHeight + SHAPE_HALF_SIZE;
+                });
+            }
+        }
+
+        // Define a query of entities that have "Velocity" and "Position" components
+        MovableSystem.queries = {
+            moving: {
+                components: [Velocity, Position]
+            }
+        }
+
+        // RendererSystem
+        class RendererSystem extends System {
+            // This method will get called on every frame by default
+            execute(delta, time) {
+
+                ctx.fillStyle = "#d4d4d4";
+                ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+                // Iterate through all the entities on the query
+                this.queries.renderables.results.forEach(entity => {
+                    const shape = entity.getComponent(Shape);
+                    const size = entity.getComponent(Size);
+                    const position = entity.getComponent(Position);
+                    this.drawCircle(position);
+                });
+            }
+
+            drawCircle(position) {
+                ctx.beginPath();
+                ctx.arc(position.x, position.y, SHAPE_HALF_SIZE, 0, 2 * Math.PI, false);
+                ctx.fillStyle = "#39c495";
+                ctx.fill();
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = "#0b845b";
+                ctx.stroke();
+            }
+
+        }
+
+        // Define a query of entities that have "Renderable" and "Shape" components
+        RendererSystem.queries = {
+            renderables: {
+                components: [Renderable, Shape, Size]
+            }
+        }
+    </script>
+
+    <script>
+        const host = window.document.location.host.replace(/:.*/, '');
+        const client = new Colyseus.Client(location.protocol.replace("http", "ws") + "//" + host + (location.port ?
+            ':' +
+            location.port : ''));
+        let ecs_demo_room;
+
+        let simulationInterval;
+
+        function join() {
+            // Logged into your app and Facebook.
+            client.joinOrCreate("ecs_demo").then(room_instance => {
+                ecs_demo_room = room_instance;
+                console.log(ecs_demo_room.serializer);
+                debugger;
+                onjoin();
+                console.log("Joined ecs-demo room!");
+
+            }).catch(e => {
+                console.error("Error", e);
+            });
+        }
+
+        function onjoin() {
+
+            const world = new World();
+            this.world = world;
+            world
+                .registerComponent(PlayerInfo)
+                .registerComponent(Velocity)
+                .registerComponent(Position)
+                .registerComponent(Shape)
+                .registerComponent(Renderable)
+                .registerSystem(MovableSystem);
+
+            ecs_demo_room.onStateChange((state) => {
+                console.log("ECS room state:", state);
+            });
+
+            const state = ecs_demo_room.state;
+            state.entities.onAdd = function (entity) {
+                console.log('Added Entity:', entity);
+                entity.components.onAdd = function (component, key) {
+                    console.log('Added Component:', component, 'on entity:', entity);
+                    // if (component instanceof PositionComponent) {
+                    //     // ...
+                    // }
+                }
+
+                entity.components.onRemove = function (component, key) {
+                    console.log('Removed Component:', component, 'on entity:', entity);
+
+                }
+            }
+
+            state.entities.onRemove = function (entity, key) {
+                console.log('Removed Entity:', entity);
+            }
+
+            ecs_demo_room.onMessage("*", (args) => {
+                console.log("Got message", ...args);
+            });
+
+            ecs_demo_room.onLeave(() => {
+                console.log("Bye, bye!");
+            });
+
+            simulationInterval = setInterval(update, 1000, 60);
+        }
+
+        let lastTime = Date.now();
+
+        function update() {
+            // Compute delta and elapsed time
+            const time = Date.now();
+            const delta = time - lastTime;
+
+            // Run all the systems
+            world.execute(delta, time);
+            lastTime = time;
+        }
+
+
+        function leave() {
+            if (ecs_demo_room) {
+                ecs_demo_room.leave();
+                clearInterval(simulationInterval);
+            } else {
+                console.warn("Not connected.");
+            }
+        }
+    </script>
+
+</body>
+
+</html>

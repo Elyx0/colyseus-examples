@@ -13,9 +13,11 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@colyseus/ecs": "git@github.com/Elyx0/ecs",
     "@colyseus/monitor": "^0.12.1",
-    "colyseus": "^0.13.0",
+    "colyseus": "^0.14.0-alpha.10",
     "cors": "^2.8.5",
+    "ecsy": "^0.3.2",
     "express": "^4.14.0",
     "serve-index": "^1.8.0",
     "superagent": "^3.8.1"
