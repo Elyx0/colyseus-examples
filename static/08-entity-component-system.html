@@ -11,7 +11,7 @@
     </style>
 
     <!-- colyseus.js client -->
-    <script type="text/javascript" src="https://raw.githack.com/colyseus/colyseus.js/dev/dist/colyseus.js"></script>
+    <script type="text/javascript" src="https://raw.githack.com/colyseus/colyseus.js/dev/dist/colyseus.dev.js"></script>
     <script type="text/javascript" src="https://ecsy.io/build/ecsy.js"></script>
 </head>
 
@@ -157,7 +157,6 @@
                 // Iterate through all the entities on the query
                 this.queries.renderables.results.forEach(entity => {
                     const shape = entity.getComponent(Shape);
-                    const size = entity.getComponent(Size);
                     const position = entity.getComponent(Position);
                     this.drawCircle(position);
                 });
@@ -165,7 +164,7 @@
 
             drawCircle(position) {
                 ctx.beginPath();
-                ctx.arc(position.x, position.y, SHAPE_HALF_SIZE, 0, 2 * Math.PI, false);
+                ctx.arc(position.x, position.y, shape.radius / 2, 0, 2 * Math.PI, false);
                 ctx.fillStyle = "#39c495";
                 ctx.fill();
                 ctx.lineWidth = 2;
@@ -178,7 +177,7 @@
         // Define a query of entities that have "Renderable" and "Shape" components
         RendererSystem.queries = {
             renderables: {
-                components: [Renderable, Shape, Size]
+                components: [Renderable, Shape]
             }
         }
     </script>

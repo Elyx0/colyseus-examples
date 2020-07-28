@@ -2,10 +2,11 @@ import { Client, Room } from "colyseus";
 import {
     Component,
     Entity,
+    State,
     System,
     TagComponent,
     World,
-} from "@colyseus/ecs/src";
+} from "@colyseus/ecs";
 import { Schema, type } from "@colyseus/schema";
 
 const SPEED_MULTIPLIER = 0.3;
@@ -36,10 +37,7 @@ class Position extends Component<any> {
 }
 
 class Shape extends Component<any> {
-    @type("string") primitive: string = "box";
-}
-
-class Size extends Component<any> {
+    @type("string") primitive: string = "circle";
     @type("uint8") radius: number;
 }
 
@@ -79,17 +77,21 @@ export class EcsDemoRoom extends Room {
     sessionIdToEntityMap = new Map<string, Entity>();
 
     onCreate() {
-        const world = new World();
+        // Create world and register the components and systems on it
+        var world = new World();
+
+        // Create Schema state, and assign entities array to it.
+        const state = new State();
         this.world = world;
+        world.useEntities(state.entities);
         world
             .registerComponent(PlayerInfo)
             .registerComponent(Velocity)
-            .registerComponent(Size)
             .registerComponent(Position)
             .registerComponent(Shape)
             .registerComponent(Renderable)
             .registerSystem(MovableSystem);
-        this.setState(world.state);
+        this.setState(state);
     }
 
     onJoin(client: Client, options) {
@@ -128,8 +130,8 @@ export class EcsDemoRoom extends Room {
 
     onLeave(client) {
         const entity = this.sessionIdToEntityMap[client.sessionId];
-        const index = this.world.state.entities.indexOf(entity);
-        this.world.state.entities.splice(index, 1);
+        const index = this.state.entities.indexOf(entity);
+        this.state.entities.splice(index, 1);
         delete this.sessionIdToEntityMap[client.sessionId];
     }
 }
