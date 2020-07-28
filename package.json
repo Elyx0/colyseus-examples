@@ -15,6 +15,7 @@
   "dependencies": {
     "@colyseus/ecs": "https://github.com/endel/ecs/",
     "@colyseus/monitor": "^0.12.1",
+    "@colyseus/schema": "^1.0.0-alpha.29",
     "colyseus": "0.14.0-alpha.4",
     "cors": "^2.8.5",
     "ecsy": "^0.3.2",

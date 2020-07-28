@@ -50,12 +50,12 @@
             height: 600
         };
 
-        class PlayerInfo extends Component {}
-        PlayerInfo.schema = {
-            sessionId: {
-                type: Types.String
-            }
-        };
+        // class PlayerInfo extends Component {}
+        // PlayerInfo.schema = {
+        //     sessionId: {
+        //         type: Types.String
+        //     }
+        // };
 
         // Initialize canvas
         let canvasSelector = document.querySelector("canvas");
@@ -209,13 +209,13 @@
 
             const world = new World();
             this.world = world;
-            world
-                .registerComponent(PlayerInfo)
-                .registerComponent(Velocity)
-                .registerComponent(Position)
-                .registerComponent(Shape)
-                .registerComponent(Renderable)
-                .registerSystem(MovableSystem);
+            // world
+            //     .registerComponent(PlayerInfo)
+            //     .registerComponent(Velocity)
+            //     .registerComponent(Position)
+            //     .registerComponent(Shape)
+            //     .registerComponent(Renderable)
+            //     .registerSystem(MovableSystem);
 
             ecs_demo_room.onStateChange((state) => {
                 console.log("ECS room state:", state);

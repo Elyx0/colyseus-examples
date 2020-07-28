@@ -1,19 +1,25 @@
 <!DOCTYPE html>
 <html>
-  <head>
+
+<head>
     <meta name="viewport" content="width=device-width" />
 
     <style>
-      body { font-family: Tahoma, Geneva, sans-serif; }
+        body {
+            font-family: Tahoma, Geneva, sans-serif;
+        }
     </style>
 
     <!-- colyseus.js client -->
-    <script type="text/javascript" src="https://raw.githack.com/colyseus/colyseus.js/master/dist/colyseus.js"></script>
+    <script type="text/javascript" src="https://raw.githack.com/colyseus/colyseus.js/dev/dist/colyseus.dev.js"></script>
 
-  </head>
-  <body>
+</head>
+
+<body>
     <h1>
-      <a href="https://github.com/colyseus/colyseus-examples"><img src="https://cdn.jsdelivr.net/gh/colyseus/colyseus@master/media/header.png" height="100" alt="colyseus" /></a>
+        <a href="https://github.com/colyseus/colyseus-examples"><img
+                src="https://cdn.jsdelivr.net/gh/colyseus/colyseus@master/media/header.png" height="100"
+                alt="colyseus" /></a>
     </h1>
 
     <p>This example shows how to use</p>
@@ -32,53 +38,55 @@
     <button onclick="reconnect()">reconnect</button>
 
     <script>
-      var host = window.document.location.host.replace(/:.*/, '');
-      var client = new Colyseus.Client(location.protocol.replace("http", "ws") + "//" + host + (location.port ? ':' + location.port : ''));
-      var room;
+        var host = window.document.location.host.replace(/:.*/, '');
+        var client = new Colyseus.Client(location.protocol.replace("http", "ws") + "//" + host + (location.port ? ':' +
+            location.port : ''));
+        var room;
 
-      function join () {
-        // Logged into your app and Facebook.
-        client.joinOrCreate("reconnection").then(room_instance => {
-            room = room_instance;
-            onjoin();
-            console.log("Joined successfully!");
+        function join() {
+            // Logged into your app and Facebook.
+            client.joinOrCreate("reconnection").then(room_instance => {
+                room = room_instance;
+                onjoin();
+                console.log("Joined successfully!");
 
-        }).catch(e => {
-            console.error("Error", e);
-        });
-      }
-
-      function onjoin() {
-          room.onMessage("status", (message) => console.log(message));
-          room.onLeave(() => console.log("Bye, bye!"));
-
-          localStorage.setItem("roomId", room.id);
-          localStorage.setItem("sessionId", room.sessionId);
-      }
-
-      function leave() {
-        if (room) {
-          room.connection.close();
-
-        } else {
-          console.warn("Not connected.");
+            }).catch(e => {
+                console.error("Error", e);
+            });
         }
-      }
 
-      function reconnect() {
-        var roomId = localStorage.getItem("roomId");
-        var sessionId = localStorage.getItem("sessionId");
+        function onjoin() {
+            room.onMessage("status", (message) => console.log(message));
+            room.onLeave(() => console.log("Bye, bye!"));
 
-        client.reconnect(roomId, sessionId).then(room_instance => {
-            room = room_instance;
-            onjoin();
-            console.log("Reconnected successfully!");
-        }).catch(e => {
-            console.error("Error", e);
-        });
+            localStorage.setItem("roomId", room.id);
+            localStorage.setItem("sessionId", room.sessionId);
+        }
 
-      }
+        function leave() {
+            if (room) {
+                room.connection.close();
+
+            } else {
+                console.warn("Not connected.");
+            }
+        }
+
+        function reconnect() {
+            var roomId = localStorage.getItem("roomId");
+            var sessionId = localStorage.getItem("sessionId");
+
+            client.reconnect(roomId, sessionId).then(room_instance => {
+                room = room_instance;
+                onjoin();
+                console.log("Reconnected successfully!");
+            }).catch(e => {
+                console.error("Error", e);
+            });
+
+        }
     </script>
 
-  </body>
+</body>
+
 </html>

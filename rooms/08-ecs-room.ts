@@ -97,31 +97,27 @@ export class EcsDemoRoom extends Room {
     onJoin(client: Client, options) {
         const entity = this.world
             .createEntity()
-            .addComponent(PlayerInfo, { sessionId: client.sessionId })
-            .addComponent(Velocity, getRandomVelocity())
-            .addComponent(Shape, getRandomShape())
-            .addComponent(Position, getRandomPosition());
-
+            .addComponent(PlayerInfo, { sessionId: client.sessionId });
+        // .addComponent(Velocity, getRandomVelocity())
+        // .addComponent(Shape, getRandomShape())
+        // .addComponent(Position, getRandomPosition());
         this.sessionIdToEntityMap[client.sessionId] = entity;
-
-        const velocity = entity.getComponent(Velocity);
-        console.log(
-            "INITIAL VELOCITY =>",
-            velocity.x,
-            velocity.y,
-            velocity.toJSON()
-        );
-
-        const shape = entity.getComponent(Shape);
-        console.log("INITIAL SHAPE =>", shape.primitive, shape.toJSON());
-
-        const position = entity.getComponent(Position);
-        console.log(
-            "INITIAL POSITION =>",
-            position.x,
-            position.y,
-            position.toJSON()
-        );
+        // const velocity = entity.getComponent(Velocity);
+        // console.log(
+        //     "INITIAL VELOCITY =>",
+        //     velocity.x,
+        //     velocity.y,
+        //     velocity.toJSON()
+        // );
+        // const shape = entity.getComponent(Shape);
+        // console.log("INITIAL SHAPE =>", shape.primitive, shape.toJSON());
+        // const position = entity.getComponent(Position);
+        // console.log(
+        //     "INITIAL POSITION =>",
+        //     position.x,
+        //     position.y,
+        //     position.toJSON()
+        // );
     }
 
     update(deltaTime: number) {

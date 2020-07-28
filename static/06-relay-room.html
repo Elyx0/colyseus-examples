@@ -1,31 +1,37 @@
 <!DOCTYPE html>
 <html>
-  <head>
+
+<head>
     <meta name="viewport" content="width=device-width" />
 
     <style>
-      body { font-family: Tahoma, Geneva, sans-serif; }
+        body {
+            font-family: Tahoma, Geneva, sans-serif;
+        }
     </style>
 
     <!-- colyseus.js client -->
-    <script type="text/javascript" src="https://raw.githack.com/colyseus/colyseus.js/master/dist/colyseus.js"></script>
+    <script type="text/javascript" src="https://raw.githack.com/colyseus/colyseus.js/dev/dist/colyseus.dev.js"></script>
 
     <style type="text/css">
-      .player {
-        width: 100px;
-        height: 100px;
-        position: absolute;
-        padding-top: 24px;
-        box-sizing: border-box;
-        left: 0;
-        top: 0;
-      }
+        .player {
+            width: 100px;
+            height: 100px;
+            position: absolute;
+            padding-top: 24px;
+            box-sizing: border-box;
+            left: 0;
+            top: 0;
+        }
     </style>
 
-  </head>
-  <body>
+</head>
+
+<body>
     <h1>
-      <a href="https://github.com/colyseus/colyseus-examples"><img src="https://cdn.jsdelivr.net/gh/colyseus/colyseus@master/media/header.png" height="100" alt="colyseus" /></a>
+        <a href="https://github.com/colyseus/colyseus-examples"><img
+                src="https://cdn.jsdelivr.net/gh/colyseus/colyseus@master/media/header.png" height="100"
+                alt="colyseus" /></a>
     </h1>
 
     <p>This example shows how to use <code>RelayRoom</code>:</p>
@@ -51,7 +57,8 @@
     <script>
         var host = window.document.location.host.replace(/:.*/, '');
 
-        var client = new Colyseus.Client(location.protocol.replace("http", "ws") + "//" + host + (location.port ? ':' + location.port : ''));
+        var client = new Colyseus.Client(location.protocol.replace("http", "ws") + "//" + host + (location.port ? ':' +
+            location.port : ''));
         var room;
 
         var colors = ['red', 'green', 'yellow', 'blue', 'cyan', 'magenta'];
@@ -121,8 +128,10 @@
             }
         }
 
-        function up () {
-            var movement = { y: -10 };
+        function up() {
+            var movement = {
+                y: -10
+            };
 
             // move locally instantly
             local_move(room.sessionId, movement);
@@ -130,8 +139,10 @@
             room.send("move", movement);
         }
 
-        function right () {
-            var movement = { x: 10 };
+        function right() {
+            var movement = {
+                x: 10
+            };
 
             // move locally instantly
             local_move(room.sessionId, movement);
@@ -139,8 +150,10 @@
             room.send("move", movement);
         }
 
-        function down () {
-            var movement = { y: 10 };
+        function down() {
+            var movement = {
+                y: 10
+            };
 
             // move locally instantly
             local_move(room.sessionId, movement);
@@ -148,16 +161,18 @@
             room.send("move", movement);
         }
 
-        function left () {
-            var movement = { x: -10 };
+        function left() {
+            var movement = {
+                x: -10
+            };
 
             // move locally instantly
             local_move(room.sessionId, movement);
 
             room.send("move", movement);
         }
-
     </script>
 
-  </body>
+</body>
+
 </html>
