@@ -3,3 +3,4 @@ package-lock.json
 npm-debug.log
 *.js
 .DS_Store
+ecs/

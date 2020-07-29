@@ -23,13 +23,14 @@
     </h1>
 
     <p>This example shows how to use a custom Room with <code>@colyseus/ecs</code>:</p>
+    <p>Open another window to see live updates to the radius after you joined the room</p>
 
     <p>Open Developer Tools for log messages.</p>
 
     <p><strong>Commands</strong></p>
 
-    <button onclick="join()">join ecs-demo-room</button>
-    <button onclick="leave()">leave ecs-demo-room</button>
+    <button id="join" onclick="join()">join ecs-demo-room</button>
+    <button id="leave" onclick="leave()">leave ecs-demo-room</button>
 
     <h2>Room:</h2>
     <canvas style='border:1px solid red'>
@@ -50,12 +51,15 @@
             height: 600
         };
 
-        // class PlayerInfo extends Component {}
-        // PlayerInfo.schema = {
-        //     sessionId: {
-        //         type: Types.String
-        //     }
-        // };
+        class Network extends Component {}
+        Network.schema = {
+            sessionId: {
+                type: Types.String
+            },
+            networkId: {
+                type: Types.Number
+            }
+        };
 
         // Initialize canvas
         let canvasSelector = document.querySelector("canvas");
@@ -100,21 +104,24 @@
             primitive: {
                 type: Types.String,
                 default: 'box'
+            },
+            radius: {
+                type: Types.Number,
+                default: 20,
+            },
+            color: {
+                type: Types.String,
+                default: '#000000',
             }
         };
 
         // Shape component
         class Size extends Component {}
 
-        Shape.schema = {
-            primitive: {
-                type: Types.Number,
-                default: 30,
-            }
-        };
-
         // Renderable component
-        class Renderable extends TagComponent {}
+        class Renderable extends TagComponent {
+
+        }
 
         //----------------------
         // Systems
@@ -128,13 +135,16 @@
                 this.queries.moving.results.forEach(entity => {
                     const velocity = entity.getComponent(Velocity);
                     const position = entity.getMutableComponent(Position);
+                    const {
+                        radius
+                    } = entity.getComponent(Shape);
                     position.x += velocity.x * delta;
                     position.y += velocity.y * delta;
 
-                    if (position.x > canvasWidth + SHAPE_HALF_SIZE) position.x = -SHAPE_HALF_SIZE;
-                    if (position.x < -SHAPE_HALF_SIZE) position.x = canvasWidth + SHAPE_HALF_SIZE;
-                    if (position.y > canvasHeight + SHAPE_HALF_SIZE) position.y = -SHAPE_HALF_SIZE;
-                    if (position.y < -SHAPE_HALF_SIZE) position.y = canvasHeight + SHAPE_HALF_SIZE;
+                    if (position.x > canvasWidth + radius) position.x = -radius;
+                    if (position.x < -radius) position.x = canvasWidth + radius;
+                    if (position.y > canvasHeight + radius) position.y = -radius;
+                    if (position.y < -radius) position.y = canvasHeight + radius;
                 });
             }
         }
@@ -142,7 +152,7 @@
         // Define a query of entities that have "Velocity" and "Position" components
         MovableSystem.queries = {
             moving: {
-                components: [Velocity, Position]
+                components: [Shape, Velocity, Position]
             }
         }
 
@@ -156,16 +166,19 @@
 
                 // Iterate through all the entities on the query
                 this.queries.renderables.results.forEach(entity => {
-                    const shape = entity.getComponent(Shape);
+                    const {
+                        radius,
+                        color
+                    } = entity.getComponent(Shape);
                     const position = entity.getComponent(Position);
-                    this.drawCircle(position);
+                    this.drawCircle(position, radius, color);
                 });
             }
 
-            drawCircle(position) {
+            drawCircle(position, radius, color) {
                 ctx.beginPath();
-                ctx.arc(position.x, position.y, shape.radius / 2, 0, 2 * Math.PI, false);
-                ctx.fillStyle = "#39c495";
+                ctx.arc(position.x, position.y, radius / 2, 0, 2 * Math.PI, false);
+                ctx.fillStyle = color;
                 ctx.fill();
                 ctx.lineWidth = 2;
                 ctx.strokeStyle = "#0b845b";
@@ -190,13 +203,16 @@
         let ecs_demo_room;
 
         let simulationInterval;
+        let joined = false;
 
         function join() {
             // Logged into your app and Facebook.
+            joined = true;
+            document.getElementById('join').disabled = true;
+
             client.joinOrCreate("ecs_demo").then(room_instance => {
                 ecs_demo_room = room_instance;
                 console.log(ecs_demo_room.serializer);
-                debugger;
                 onjoin();
                 console.log("Joined ecs-demo room!");
 
@@ -209,36 +225,85 @@
 
             const world = new World();
             this.world = world;
-            // world
-            //     .registerComponent(PlayerInfo)
-            //     .registerComponent(Velocity)
-            //     .registerComponent(Position)
-            //     .registerComponent(Shape)
-            //     .registerComponent(Renderable)
-            //     .registerSystem(MovableSystem);
+            world
+                .registerComponent(Network)
+                .registerComponent(Velocity)
+                .registerComponent(Position)
+                .registerComponent(Shape)
+                .registerComponent(Renderable)
+                .registerSystem(MovableSystem)
+                .registerSystem(RendererSystem);
 
             ecs_demo_room.onStateChange((state) => {
                 console.log("ECS room state:", state);
             });
 
+            // {Network: ƒ, Velocity: ƒ, Position: ƒ, Shape: ƒ, Renderable: ƒ}
+            const componentNameToComponentFunction = world.componentsManager.Components.reduce((y, x) => {
+                y[x.name] = x;
+                return y
+            }, {});
+
             const state = ecs_demo_room.state;
-            state.entities.onAdd = function (entity) {
-                console.log('Added Entity:', entity);
-                entity.components.onAdd = function (component, key) {
-                    console.log('Added Component:', component, 'on entity:', entity);
-                    // if (component instanceof PositionComponent) {
-                    //     // ...
-                    // }
+            state.entities.onAdd = function (stateEntity) {
+                console.log('Added Entity:', stateEntity);
+                const entity = world.createEntity(stateEntity.id);
+                // In this demo every entity is renderable, adding it.
+                entity.addComponent(Renderable);
+
+                // Components Add
+                stateEntity.components.onAdd = function (component, key) {
+
+                    console.log('Added Component:', component, 'on state entity:', stateEntity);
+                    if (component.cName && component.cName in componentNameToComponentFunction) {
+                        // If we found that component name in our list registered by the world,
+                        // instantiate the entity with the fields of the component.
+
+                        const componentToAdd = componentNameToComponentFunction[component.cName];
+
+                        //  _.pick exactly the fields from the Component.schema
+                        let initComponentFields = {};
+                        for (const key in componentToAdd.schema) {
+                            const valueInStateComponent = component[key];
+                            if (valueInStateComponent === undefined) throw new Error(
+                                `Expected ${key} on ${component.cName}`);
+                            initComponentFields[key] = valueInStateComponent;
+                        }
+                        // Finally add it to the component
+                        entity.addComponent(componentToAdd, initComponentFields);
+                        console.log('Added Component:', component.cName, 'on local entity:', entity.id, 'with:',
+                            initComponentFields);
+
+                    }
                 }
 
-                entity.components.onRemove = function (component, key) {
-                    console.log('Removed Component:', component, 'on entity:', entity);
+                stateEntity.components.onRemove = function (component, key) {
+                    // Check that I have the entity locally,
+                    // Remove the component.
+                    const entity = world.entityManager.getEntityByName(String(entity.id));
+                    if (entity) {
+                        if (component.cName && component.cName in
+                            componentNameToComponentFunction) { // Maybe a helper for this
+                            entity.removeComponent(componentNameToComponentFunction[component.cName]);
+                            console.log('Removed Component:', component.cName, 'on local entity:', entity.id);
+                        }
+                    }
+
+                    console.log('Removed Component:', component, 'on state entity:', stateEntity);
 
                 }
             }
 
-            state.entities.onRemove = function (entity, key) {
-                console.log('Removed Entity:', entity);
+            state.entities.onRemove = function (stateEntity, key) {
+                const entity = world.entityManager.getEntityByName(String(entity.id));
+                if (entity) {
+                    if (component.cName && component.cName in
+                        componentNameToComponentFunction) { // Maybe a helper for this
+                        entity.removeAllComponents();
+                        console.log('Removed All Components on local entity:', entity.id);
+                    }
+                }
+                console.log('Removed Entity:', stateEntity);
             }
 
             ecs_demo_room.onMessage("*", (args) => {
@@ -249,7 +314,7 @@
                 console.log("Bye, bye!");
             });
 
-            simulationInterval = setInterval(update, 1000, 60);
+            simulationInterval = setInterval(update, 1000 / 60);
         }
 
         let lastTime = Date.now();
@@ -269,6 +334,8 @@
             if (ecs_demo_room) {
                 ecs_demo_room.leave();
                 clearInterval(simulationInterval);
+                joined = false;
+                document.getElementById('join').disabled = false;
             } else {
                 console.warn("Not connected.");
             }

@@ -20,29 +20,37 @@ let canvasWidth = (canvas.width = window.innerWidth);
 let canvasHeight = (canvas.height = window.innerHeight);
 
 // Player information component
-class PlayerInfo extends Component<any> {
+class Network extends Component<any> {
+    @type("string") cName: string = this.constructor.name;
     @type("string") sessionId: string;
+    @type("int64") networkId: number;
 }
 
 // Velocity component
 class Velocity extends Component<any> {
+    @type("string") cName: string = this.constructor.name;
     @type("number") x: number;
     @type("number") y: number;
 }
 
 // Position component
 class Position extends Component<any> {
+    @type("string") cName: string = this.constructor.name;
     @type("number") x: number;
     @type("number") y: number;
 }
 
 class Shape extends Component<any> {
+    @type("string") cName: string = this.constructor.name;
     @type("string") primitive: string = "circle";
-    @type("uint8") radius: number;
+    @type("string") color: string;
+    @type("uint8") radius: number = 10;
 }
 
 // Renderable component
-class Renderable extends TagComponent {}
+class Renderable extends TagComponent {
+    @type("string") cName: string = this.constructor.name;
+}
 
 // MovableSystem
 class MovableSystem extends System {
@@ -75,7 +83,7 @@ class MovableSystem extends System {
 export class EcsDemoRoom extends Room {
     world: World; // Has a world.state with the entities array
     sessionIdToEntityMap = new Map<string, Entity>();
-
+    entityIdToEntity = new Map<number, Entity>();
     onCreate() {
         // Create world and register the components and systems on it
         var world = new World();
@@ -85,22 +93,40 @@ export class EcsDemoRoom extends Room {
         this.world = world;
         world.useEntities(state.entities);
         world
-            .registerComponent(PlayerInfo)
+            .registerComponent(Network)
             .registerComponent(Velocity)
             .registerComponent(Position)
             .registerComponent(Shape)
             .registerComponent(Renderable)
             .registerSystem(MovableSystem);
+
+        this.onMessage("self-radius", (client, data) => {
+            console.log(
+                "Ecs-room received message from",
+                client.sessionId,
+                ":",
+                data
+            );
+            // Todo: Write me
+            this.state.changeRadius(client.sessionId, data);
+        });
+
         this.setState(state);
     }
 
     onJoin(client: Client, options) {
-        const entity = this.world
-            .createEntity()
-            .addComponent(PlayerInfo, { sessionId: client.sessionId });
-        // .addComponent(Velocity, getRandomVelocity())
-        // .addComponent(Shape, getRandomShape())
-        // .addComponent(Position, getRandomPosition());
+        const entity = this.world.createEntity(client.sessionId);
+        entity.addComponent(Network, {
+            sessionId: client.sessionId,
+            networkId: entity.id,
+        });
+
+        // Adding more components
+        entity
+            .addComponent(Velocity, getRandomVelocity())
+            .addComponent(Shape, getRandomShape())
+            .addComponent(Position, getRandomPosition());
+        console.log(this.roomId, "Created :", entity.id);
         this.sessionIdToEntityMap[client.sessionId] = entity;
         // const velocity = entity.getComponent(Velocity);
         // console.log(
@@ -125,9 +151,12 @@ export class EcsDemoRoom extends Room {
     }
 
     onLeave(client) {
+        console.log(this.roomId, "OnLeave:", client.sessionId);
         const entity = this.sessionIdToEntityMap[client.sessionId];
-        const index = this.state.entities.indexOf(entity);
-        this.state.entities.splice(index, 1);
+        // const index = this.state.entities.indexOf(entity);
+        // this.state.entities.splice(index, 1);
+        console.log("Will call remove on entity #", entity.id);
+        entity.remove();
         delete this.sessionIdToEntityMap[client.sessionId];
     }
 }
@@ -150,5 +179,7 @@ function getRandomPosition() {
 function getRandomShape() {
     return {
         primitive: Math.random() >= 0.5 ? "circle" : "box",
+        radius: 20,
+        color: "#" + Math.floor(Math.random() * 16777215).toString(16),
     };
 }
